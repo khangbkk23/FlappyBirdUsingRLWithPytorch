@@ -1,6 +1,7 @@
 import torch
 import os
-import matplotlib as plt
+import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 import random
 from datetime import datetime, timedelta
@@ -16,14 +17,14 @@ import itertools
 import yaml
 
 # Coding for draw the graph
-DATE_FORMAT = "%m-%d $H:%M:%S"
+DATE_FORMAT = "%m-%d %H:%M:%S"
 
 # Directory for saving run info
 RUNS_DIR = "runs"
 os.makedirs(RUNS_DIR, exist_ok=True)
 
 # Agg
-plt.use('Agg')
+matplotlib.use('Agg')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f"Using device: {device}")
@@ -36,7 +37,7 @@ class Agent:
             all_hyperparameter_sets = yaml.safe_load(file)
             hyperparameters = all_hyperparameter_sets[hyperparameter_set]
             # print(hyperparameters)
-        
+        self.hyperparameter_set = hyperparameter_set
         self.render = render
         self.env_id = hyperparameters['env_id']
         self.env = gym.make(self.env_id, render_mode="human" if render else None)
@@ -87,7 +88,7 @@ class Agent:
             rewards_per_episode = []
 
             # Create policy and target network. Number of nodes in the hidden layer can be adjusted.
-            policy_dqn = DQN(num_states, num_actions, self.fc1_nodes, self.enable_dueling_dqn).to(device)
+            policy_dqn = DQN(num_states, num_actions, self.fc1_nodes).to(device)
 
             if is_training:
                 # Initialize epsilon
@@ -97,7 +98,7 @@ class Agent:
                 memory = ReplayMemory(self.replay_memory_size)
 
                 # Create the target network and make it identical to the policy network
-                target_dqn = DQN(num_states, num_actions, self.fc1_nodes, self.enable_dueling_dqn).to(device)
+                target_dqn = DQN(num_states, num_actions, self.fc1_nodes).to(device)
                 target_dqn.load_state_dict(policy_dqn.state_dict())
 
                 # Policy network optimizer. "Adam" optimizer can be swapped to something else.
@@ -243,19 +244,19 @@ class Agent:
         terminations = torch.tensor(terminations).float().to(device)
 
         with torch.no_grad():
-            if self.enable_double_dqn:
-                best_actions_from_policy = policy_dqn(new_states).argmax(dim=1)
+            # if self.enable_double_dqn:
+            #     best_actions_from_policy = policy_dqn(new_states).argmax(dim=1)
 
-                target_q = rewards + (1-terminations) * self.discount_factor_g * \
-                                target_dqn(new_states).gather(dim=1, index=best_actions_from_policy.unsqueeze(dim=1)).squeeze()
-            else:
+            #     target_q = rewards + (1-terminations) * self.discount_factor_g * \
+            #                     target_dqn(new_states).gather(dim=1, index=best_actions_from_policy.unsqueeze(dim=1)).squeeze()
+            # else:
                 # Calculate target Q values (expected returns)
-                target_q = rewards + (1-terminations) * self.discount_factor_g * target_dqn(new_states).max(dim=1)[0]
-                '''
+            target_q = rewards + (1-terminations) * self.discount_factor_g * target_dqn(new_states).max(dim=1)[0]
+            '''
                     target_dqn(new_states)  ==> tensor([[1,2,3],[4,5,6]])
                         .max(dim=1)         ==> torch.return_types.max(values=tensor([3,6]), indices=tensor([3, 0, 0, 1]))
                             [0]             ==> tensor([3,6])
-                '''
+            '''
 
         # Calcuate Q values from current policy
         current_q = policy_dqn(states).gather(dim=1, index=actions.unsqueeze(dim=1)).squeeze()
