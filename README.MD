@@ -13,3 +13,6 @@
 ` -0.5 - touch the top of the screen`
 ## Policy of nn
 ![alt text](image/image.png)
+
+## We need to copy policy network to target network
+That because of changing continual, then we have to copy to another network to store the result trained.
