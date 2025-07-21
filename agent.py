@@ -199,6 +199,9 @@ class Agent:
                         if step_count > self.network_sync_rate:
                             target_dqn.load_state_dict(policy_dqn.state_dict())
                             step_count=0
+                if episode % 100 == 0:
+                    print(f"Episode {episode}: reward = {episode_reward}, best = {best_reward}")
+
 
     def save_graph(self, rewards_per_episode, epsilon_history):
         # Save plots
@@ -220,6 +223,7 @@ class Agent:
         plt.plot(epsilon_history)
 
         plt.subplots_adjust(wspace=1.0, hspace=1.0)
+        plt.xlabel('Episodes')
 
         # Save plots
         fig.savefig(self.GRAPH_FILE)
